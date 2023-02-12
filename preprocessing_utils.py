@@ -1,6 +1,7 @@
 import os
 import json
 import pandas as pd
+from nltk import word_tokenize, FreqDist, bigrams, trigrams
 
 
 def load_conversation(path):
@@ -70,3 +71,63 @@ def prepare_data(data_path):
     df = convert_timestamps(df)
 
     return df
+
+
+def load_stopwords(path):
+    
+    #
+    #   Helper function to load and polish stopwords from text file.
+    #   Input: A path to the stopwords.txt file
+    #   Output: Python list of stopwords
+    #
+
+    with open(path, "r", encoding='utf-8') as file:
+        stopwords = file.read()
+        stopwords = stopwords.split("\n")
+    
+    return stopwords
+
+
+def tokenize_messages(df, path_to_stopwords):
+
+    #
+    #   Function to preprocess all messages in the conversation. It cleanes the data from nan's and stopwords and split into meaningful tokens..
+    #   Input: Pandas DataFrame prepared by prepare_data function, path to stopwords text file.
+    #   Output: Python list of all tokens from conversation messages
+    #
+
+    messages = df['content'].to_numpy()
+    tokenized_text = []
+
+    stopwords = load_stopwords(path_to_stopwords)
+
+    for msg in messages:
+        if msg != 'nan':
+            
+            tokens = word_tokenize(msg.lower(), language='polish')
+            tokens = [token for token in tokens if (token not in stopwords) and (token.isalpha())] 
+            tokenized_text.extend(tokens)
+
+    return tokenized_text
+
+
+def prepare_word_freq_distribution(tokenized_text, n=1):
+
+    #
+    #   Function to calculate word frequencies in the conversation. It can count single words as well as bigrams and trigrams.
+    #   Input: Python list of tokens prepared by tokenize_messages function, number of n-grams (1, 2, or 3 possible).
+    #   Output: nltk FreqDist based on the conversation
+    #
+
+    assert 0 < n <= 3, "n must be 1, 2 or 3"
+
+    if n == 1:
+        freqDist = FreqDist(tokenized_text)
+    elif n == 2:
+        bgs = bigrams(tokenized_text)
+        freqDist = FreqDist(bgs)
+    else:
+        tgs = trigrams(tokenized_text)
+        freqDist = FreqDist(tgs)
+
+    return freqDist

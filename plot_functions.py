@@ -1,4 +1,8 @@
 import plotly.graph_objects as go
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+import numpy as np
+from PIL import Image
 
 def plot_monthly_messages(df):
 
@@ -74,3 +78,29 @@ def distribution_pie(df):
             ), showlegend=False, width=500
                         )
     fig.show()
+
+
+
+def generate_wordcloud(tokenized_text, path_to_mask='resources/mask.npy', colormap='viridis', background_color='white', max_words=100):
+
+    #
+    #   Create a word cloud of most popular words in the conversation.
+    #   Input: Python list of tokens prepared by tokenize_messages in prepocessing_utils
+    #   Output: Word Cloud image 
+    #
+    
+    text = " ".join(tokenized_text)
+   
+    mask = np.load(path_to_mask)
+
+    cloud = WordCloud(scale=3,
+                      max_words=max_words,
+                      colormap=colormap,
+                      mask=mask,
+                      background_color=background_color,
+               
+                      collocations=True).generate_from_text(text)
+    plt.figure(figsize=(10,8))
+    plt.imshow(cloud)
+    plt.axis('off')
+    plt.show()
