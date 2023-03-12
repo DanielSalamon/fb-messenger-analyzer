@@ -43,6 +43,7 @@ def plot_monthly_messages(df):
         )
                     )
 
+   
     fig.show()
 
 
@@ -59,8 +60,8 @@ def distribution_pie(df):
     labels = counts.index
 
     layout = go.Layout(
-        paper_bgcolor='lightgrey',#'rgba(0,0,0,0)',
-        plot_bgcolor='lightgrey')#'rgba(0,0,0,0)')
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)')
 
 
     # Use `hole` to create a donut-like pie chart
@@ -77,7 +78,10 @@ def distribution_pie(df):
                 color="DarkBlue"
             ), showlegend=False, width=500
                         )
-    fig.show()
+    
+    
+    #fig.show()
+    fig.write_image("figures/pie.png")
 
 
 
@@ -103,4 +107,8 @@ def generate_wordcloud(tokenized_text, path_to_mask='resources/mask.npy', colorm
     plt.figure(figsize=(10,8))
     plt.imshow(cloud)
     plt.axis('off')
-    plt.show()
+   # plt.show()
+    #plt.savefig("figures/wordcloud.png")
+    plt.imsave("figures/wordcloud.png", cloud.to_array())
+
+ 
