@@ -234,10 +234,12 @@ def granted_reaction_stats_per_user(df):
 
         favourtite_reaction_given_ranking = given_reactions.value_counts()
         favourite_users_ranking = users_to_give.value_counts()
+        total_reactions_given = len(collection_dict[usr]["reactions"])
 
         result_dict[usr] = {
-                            "favourtite_reaction_given" : favourtite_reaction_given_ranking.index[0],
-                            "favourite_user_to_give" : favourite_users_ranking.index[0]
+                            "favourite_reaction_given" : favourtite_reaction_given_ranking.index[0],
+                            "favourite_user_to_give" : favourite_users_ranking.index[0],
+                            "reactions_given" : total_reactions_given
                            }
                 
 
@@ -292,11 +294,55 @@ def get_stats_per_user(df):
 
     conversation_users = df['sender_name'].unique()
     output_dict = {}
+    granted_reaction_stats = granted_reaction_stats_per_user(df)
 
     for user in conversation_users:
 
         user_messages_df = df.loc[df["sender_name"] == user]
         user_stats = get_conversation_stats(user_messages_df)
+        user_stats["favourtie_reaction_given"] = granted_reaction_stats[user]['favourite_reaction_given']
+        user_stats['favourite_user_to_give_to'] = granted_reaction_stats[user]['favourite_user_to_give']
+        user_stats["total_reactions_given_to_others"] = granted_reaction_stats[user]['reactions_given']
         output_dict[user] = user_stats
 
-    return pd.DataFrame.from_dict(output_dict, orient='index')
+    result = pd.DataFrame.from_dict(output_dict, orient='index')
+    
+    return result[result['total_messages'] > 1] # return the actual participants which sent more that jsut one message
+
+
+
+def get_badges(df):
+    
+    """
+    Retrieves the top performers in different categories based on the provided DataFrame.
+
+    Args:
+        df (pandas.DataFrame): The DataFrame containing the necessary data.
+
+    Returns:
+        dict: A dictionary with keys representing different categories and values representing the top performers in each category.
+
+    Description:
+        This function takes a DataFrame as input and retrieves the top performers in different categories. The categories and their corresponding criteria are as follows:
+        
+        - Messenger: The top 3 individuals with the highest total number of messages.
+        - Storyteller: The top 3 individuals with the highest average message length.
+        - Entertainer: The top 3 individuals with the highest ratio of total reactions to total messages.
+        - Sensitivist: The top 3 individuals with the highest total number of reactions given to others.
+        
+        The function creates a dictionary with the category names as keys and a list of top performers (formatted as "<performer> - <value>") as values. The resulting dictionary is returned.
+    """
+
+    Messenger = df["total_messages"].sort_values(ascending=False)[:3].reset_index()
+    Storyteller = df["avg_message_length"].sort_values(ascending=False)[:3].reset_index()
+    Entertainer = (df["total_reactions"] / df["total_messages"]).sort_values(ascending=False)[:3]
+    Sensitivist = df["total_reactions_given_to_others"].sort_values(ascending=False)[:3].reset_index()
+    
+    result = {"Messenger" : [str(Messenger.loc[i,:]["index"]) + " - " + str(Messenger.loc[i,:]["total_messages"]) for i in range(3)],
+              "Storyteller" : [str(Storyteller.loc[i,:]["index"]) + " - " + str(Storyteller.loc[i,:]["avg_message_length"]) for i in range(3)],
+              "Entertainer" : [i + " - " + str(np.round(Entertainer.loc[i], 2)) for i in Entertainer.index],
+              "Sensitivist" : [str(Sensitivist.loc[i,:]["index"]) + " - " + str(Sensitivist.loc[i,:]["total_reactions_given_to_others"]) for i in range(3)]
+
+    }
+
+    return result
